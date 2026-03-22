@@ -6,43 +6,52 @@ on:
       - 'v*'
 
 jobs:
-  # 1. 리눅스 빌드 (ARM64 & AMD64)
-  build-linux:
-    runs-on: ubuntu-latest
+  # 리눅스 ARM64 빌드 (검증된 스크립트 그대로 실행)
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm64  # <--- 핵심: ARM64 전용 서버를 빌립니다.
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Run Linux Build Scripts
+      - name: Run ARM64 Script
         run: |
-          chmod +x make_linux_arm64.sh make_linux_amd64.sh
-          # 각 스크립트 내부에서 apt 설치부터 .deb 생성까지 완결
-          ./make_linux_arm64.sh
-          ./make_linux_amd64.sh
+          chmod +x make_linux_arm64.sh
+          ./make_linux_arm64.sh  # 수정하지 않은 원본 스크립트 실행
 
-      - name: Upload Linux Assets
+      - name: Upload ARM64 Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: "*.deb"
+          files: "*_arm64.deb"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # 2. 맥 빌드 (Apple Silicon)
+  # 리눅스 AMD64 빌드 (검증된 스크립트 그대로 실행)
+  build-linux-amd64:
+    runs-on: ubuntu-latest  # 기본 x86_64 서버
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run AMD64 Script
+        run: |
+          chmod +x make_linux_amd64.sh
+          ./make_linux_amd64.sh  # 수정하지 않은 원본 스크립트 실행
+
+      - name: Upload AMD64 Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*_amd64.deb"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 맥 빌드
   build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Run Mac Build Script
+      - name: Run Mac Script
         run: |
           chmod +x make_mac_arm64.sh
-          # 스크립트 실행 후 ScriptLauncher.app 폴더가 생성됨
           ./make_mac_arm64.sh
-          
-          # 생성된 .app 폴더를 GitHub Release 업로드용으로 압축
-          # -r 옵션으로 하위 폴더까지 모두 포함
           zip -r ScriptLauncher_mac_arm64.zip ScriptLauncher.app
 
-      - name: Upload Mac Assets
+      - name: Upload Mac Asset
         uses: softprops/action-gh-release@v2
         with:
           files: "ScriptLauncher_mac_arm64.zip"
