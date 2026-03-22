@@ -3,6 +3,15 @@
 set -e -x
 uname -m
 
+# 리눅스 및 x86_64 아키텍처 확인
+if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
+    echo "Error: This script is only for Linux (AMD64/x86_64)."
+    echo "Detected: $(uname -s) ($(uname -m))"
+    exit 1
+fi
+
+echo "Linux AMD64 detected. Starting build..."
+
 # 1. Go 1.24 설치 및 경로 설정 (x86_64 버전)
 GO_INSTALL_DIR="$HOME/sdk/go1.24"
 if [ ! -d "$GO_INSTALL_DIR" ]; then

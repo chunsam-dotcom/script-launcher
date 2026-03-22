@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# 1. OS가 macOS(Darwin)인지 확인
+OS_TYPE=$(uname -s)
+# 2. 아키텍처가 arm64(Apple Silicon)인지 확인
+ARCH_TYPE=$(uname -m)
+
+if [[ "$OS_TYPE" != "Darwin" || "$ARCH_TYPE" != "arm64" ]]; then
+    echo "Error: This script is only for Mac with Apple Silicon (M1, M2, M3...)."
+    echo "Current System: $OS_TYPE ($ARCH_TYPE)"
+    exit 1
+fi
+
+# 여기서부터 실제 스크립트 내용 시작
+echo "Apple Silicon Mac detected. Proceeding..."
+
 APP_NAME="ScriptLauncher"
 APP_ID="com.chunsam.scriptlauncher"
 ICON_PATH="app.png"

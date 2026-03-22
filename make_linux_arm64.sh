@@ -3,6 +3,15 @@
 set -e -x
 uname -m
 
+# 리눅스 및 arm64 아키텍처 확인
+if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "aarch64" && "$(uname -m)" != "arm64" ]]; then
+    echo "Error: This script is only for Linux (ARM64)."
+    echo "Detected: $(uname -s) ($(uname -m))"
+    exit 1
+fi
+
+echo "Linux ARM64 detected. Starting build..."
+
 # 1. Go 1.24 설치 및 경로 설정 (프로젝트 밖인 상위 폴더에 설치하여 간섭 차단)
 GO_INSTALL_DIR="$HOME/sdk/go1.24"
 if [ ! -d "$GO_INSTALL_DIR" ]; then
