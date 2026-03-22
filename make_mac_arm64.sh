@@ -4,6 +4,8 @@ APP_NAME="ScriptLauncher"
 APP_ID="com.chunsam.scriptlauncher"
 ICON_PATH="app.png"
 
+go install fyne.io/tools/cmd/fyne@latest
+
 echo "🚀 빌드 시작: $APP_NAME..."
 
 go mod tidy
