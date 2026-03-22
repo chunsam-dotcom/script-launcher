@@ -1,3 +1,4 @@
+cat << 'EOF' > .github/workflows/release.yml
 name: Release Script Launcher
 
 on:
@@ -51,3 +52,4 @@ jobs:
             *.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+EOF
