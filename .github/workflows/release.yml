@@ -1,4 +1,4 @@
-name: Release Script Launcher (macOS)
+name: Release Script Launcher
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  build-macos:
+  build:
     runs-on: macos-latest
     steps:
       - name: Checkout Code
@@ -16,26 +16,22 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: true
 
-      - name: Install and Build (Unified Step)
+      - name: Run your make script
         run: |
-          # 1. Fyne CLI 설치
+          # 1. Fyne CLI가 필요하다면 여기서 한 번만 설치
           go install fyne.io/fyne/v2/cmd/fyne@latest
-          
-          # 2. 설치된 경로를 현재 세션 PATH에 즉시 반영
           export PATH=$PATH:$(go env GOPATH)/bin
           
-          # 3. 빌드 및 패키징 (같은 환경 내에서 실행)
-          go mod tidy
-          curl -sL https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/terminal.svg -o app.png
-          
-          fyne package -os darwin -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
-          zip -r ScriptLauncher_macOS.zip ScriptLauncher.app
+          # 2. 이미 가지고 계신 make.sh 실행 (실행 권한 부여 후)
+          chmod +x make.sh
+          ./make.sh
 
-      - name: Create Release and Upload
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ScriptLauncher_macOS.zip
+          files: |
+            *.zip
+            *.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
