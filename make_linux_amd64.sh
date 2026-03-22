@@ -66,7 +66,7 @@ EOF
     fi
 
     echo "✅ AMD64 빌드 완료!"
-    ls -l grep "_amd64.deb"
+    #ls -l grep "_amd64.deb"
 else
     echo "⚠️ $ICON_PATH 파일이 없습니다."
     exit 1

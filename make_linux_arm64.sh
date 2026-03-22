@@ -71,7 +71,7 @@ EOF
     fi
 
     echo "✅ 빌드 완료!"
-    ls -l | grep ".deb"
+    #ls -l | grep ".deb"
 else
     echo "⚠️ $ICON_PATH 파일이 없습니다."
 fi
