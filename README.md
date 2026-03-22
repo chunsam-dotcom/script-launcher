@@ -6,6 +6,13 @@ Very simple script launcher
 1. Put all your `*.sh` scripts into the `$HOME/system` folder.
 2. Launch your shell scripts easily using this app.
 
+> [!TIP]
+> **If you see "Move to Trash" error on macOS:**
+> This happens because the app is not code-signed. To fix this, run the following command in your terminal:
+> ```bash
+> xattr -rd com.apple.quarantine ./ScriptLauncher.app
+> ```
+
 ## Build
 
 While this app is simple to use, building it requires some preparation due to its UI dependencies.
