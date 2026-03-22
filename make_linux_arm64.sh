@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e -x
+uname -m
 
 # 1. Go 1.24 설치 및 경로 설정 (프로젝트 밖인 상위 폴더에 설치하여 간섭 차단)
 GO_INSTALL_DIR="$HOME/sdk/go1.24"

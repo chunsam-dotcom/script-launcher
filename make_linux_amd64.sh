@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e -x
+uname -m
 
 # 1. Go 1.24 설치 및 경로 설정 (x86_64 버전)
 GO_INSTALL_DIR="$HOME/sdk/go1.24"
