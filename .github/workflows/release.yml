@@ -17,21 +17,26 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Run your make script
+      - name: Build with make.sh
         run: |
-          # 1. Fyne CLI가 필요하다면 여기서 한 번만 설치
+          # 1. Fyne 도구 설치 및 경로 강제 지정
           go install fyne.io/fyne/v2/cmd/fyne@latest
           export PATH=$PATH:$(go env GOPATH)/bin
           
-          # 2. 이미 가지고 계신 make.sh 실행 (실행 권한 부여 후)
+          # 2. 빌드 타겟을 macOS(darwin)로 명시하고 실행 권한 부여
           chmod +x make.sh
-          ./make.sh
+          
+          # 3. 환경 변수를 명시적으로 주입하며 실행 (핵심!)
+          GOOS=darwin GOARCH=arm64 ./make.sh
+          
+          # 만약 위 명령어로 안 된다면 아래 fyne 명령어를 직접 실행
+          # fyne package -os darwin -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
+          # zip -r ScriptLauncher_macOS.zip ScriptLauncher.app
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             *.zip
-            *.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
