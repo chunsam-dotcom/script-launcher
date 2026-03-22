@@ -6,54 +6,55 @@ on:
       - 'v*'
 
 jobs:
-  # 1. macOS 빌드 (리눅스 설치 과정 제외)
-  build-macos:
-    runs-on: macos-latest
+  build-and-release:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-      - name: Install Fyne CLI
-        run: go install fyne.io/fyne/v2/cmd/fyne@latest
-      - name: Build and Package
-        run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
-          go mod tidy
-          curl -sL https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/terminal.svg -o app.png
-          fyne package -os darwin -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
-          zip -r ScriptLauncher_macOS.zip ScriptLauncher.app
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ScriptLauncher_macOS.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  # 2. Linux 빌드 (설치 과정을 강제로 포함)
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-      - name: Install Dependencies (Linux Only)
+      # 1. 리눅스일 때만 의존성 설치 (if 문 위치 조정)
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev xorg-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev libxkbcommon-dev libwayland-dev pkg-config
+
+      # 2. Go 1.24 설치 (go.mod 에러 방지)
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
       - name: Install Fyne CLI
         run: go install fyne.io/fyne/v2/cmd/fyne@latest
+
       - name: Build and Package
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
           go mod tidy
+          
+          # 아이콘 생성 (실패 방지용)
           curl -sL https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/terminal.svg -o app.png
-          fyne package -os linux -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
-          tar -cvzf ScriptLauncher_Linux.tar.gz ScriptLauncher
-      - name: Release
+          
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            fyne package -os darwin -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
+            zip -r ScriptLauncher_macOS.zip ScriptLauncher.app
+          else
+            fyne package -os linux -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
+            tar -cvzf ScriptLauncher_Linux.tar.gz ScriptLauncher
+          fi
+
+      # 3. 릴리즈 업로드 (파일이 있을 때만 실행)
+      - name: Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
-          files: ScriptLauncher_Linux.tar.gz
+          files: |
+            *.zip
+            *.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
