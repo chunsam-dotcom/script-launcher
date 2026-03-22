@@ -7,6 +7,27 @@ Very simple script launcher
 2. launch your shell script by this app
 
 - build
+
+### for Mac M1, M2...
+- *This will install many dependency packages into your Mac.*
+- Please review make_mac_arm64.sh before you build.
+
+You should have installed "go" in your mac.
+
 ```
-$./make.sh
+$./make_mac_arm64.sh
 ```
+
+### for Linux (arm64, x86)
+
+- *This will install many dependency packages into your PC.*
+- If you don't want it, make a another build PC(VM) and then compile it.
+
+```
+make_linux_amd64.sh
+```
+
+```
+make_linux_arm64.sh
+```
+

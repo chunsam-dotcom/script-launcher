@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  
 jobs:
   # 리눅스 ARM64 빌드 (검증된 스크립트 그대로 실행)
   build-linux-arm64:
