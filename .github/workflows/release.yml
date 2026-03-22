@@ -25,14 +25,17 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev xorg-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev libxkbcommon-dev libwayland-dev
+          sudo apt-get install -y libgl1-mesa-dev xorg-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxxf86vm-dev libxkbcommon-dev libwayland-dev pkg-config
 
       - name: Install Fyne CLI
         run: go install fyne.io/fyne/v2/cmd/fyne@latest
 
       - name: Build and Package
         run: |
+          # 1. 경로 및 환경 변수 설정
           export PATH=$PATH:$(go env GOPATH)/bin
+          export CGO_ENABLED=1
+          
           go mod tidy
           curl -sL https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/terminal.svg -o app.png
           
@@ -40,6 +43,7 @@ jobs:
             fyne package -os darwin -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
             zip -r ScriptLauncher_macOS.zip ScriptLauncher.app
           else
+            # 2. 리눅스 패키징 (CGO가 라이브러리를 찾도록 명시)
             fyne package -os linux -icon app.png -id "com.genius3.scriptlauncher" -name "ScriptLauncher"
             tar -cvzf ScriptLauncher_Linux.tar.gz ScriptLauncher
           fi
