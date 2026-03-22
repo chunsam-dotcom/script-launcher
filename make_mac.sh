@@ -2,7 +2,7 @@
 
 APP_NAME="ScriptLauncher"
 APP_ID="com.chunsam.scriptlauncher"
-ICON_PATH="app.icns"
+ICON_PATH="app.png"
 
 echo "🚀 빌드 시작: $APP_NAME..."
 
