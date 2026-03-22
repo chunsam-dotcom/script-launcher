@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -98,41 +99,65 @@ func main() {
 
 	// --- 핵심 실행 함수 (AppleScript 활용) ---
 	run := func() {
-		if selectedIdx >= 0 && selectedIdx < len(listData) {
-			scriptName := listData[selectedIdx]
-			scriptPath := filepath.Join(baseDir, scriptName)
+		if selectedIdx < 0 || selectedIdx >= len(listData) {
+			return
+		}
+		scriptName := listData[selectedIdx]
+		scriptPath := filepath.Join(baseDir, scriptName)
 
-			// AppleScript 로직:
-			// 1. 터미널 활성화
-			// 2. 창이 없으면 새로 생성, 있으면 새 탭(Cmd+T) 생성
-			// 3. 해당 탭의 테마를 'Homebrew'(초록색)로 변경하고 제목 설정
+		var cmd *exec.Cmd
+
+		switch runtime.GOOS {
+		case "darwin":
+			// [기존 로직 유지] AppleScript를 이용한 탭 생성 및 테마 설정
 			osa := fmt.Sprintf(`
-				tell application "Terminal"
-					activate
-					if (count of windows) is 0 then
-						do script "%s"
-					else
-						tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
-						delay 0.1
-						do script "%s" in front window
-					end if
-					-- 테마 및 제목 설정
-					set custom title of tab (count of tabs of front window) of front window to "%s"
-				end tell`, scriptPath, scriptPath, scriptName)
+                tell application "Terminal"
+                    activate
+                    if (count of windows) is 0 then
+                        do script "%s"
+                    else
+                        tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+                        delay 0.1
+                        do script "%s" in front window
+                    end if
+                    set custom title of tab (count of tabs of front window) of front window to "%s"
+                end tell`, scriptPath, scriptPath, scriptName)
+			cmd = exec.Command("osascript", "-e", osa)
 
-			cmd := exec.Command("osascript", "-e", osa)
-			cmd.Dir = baseDir
-
-			// 실행 및 에러 처리 (기존 로직 유지)
-			err := cmd.Run()
-			if err != nil {
-				dialog.ShowError(err, myWindow)
+		case "linux":
+			// 1. 시스템의 기본 터미널 에뮬레이터 찾기
+			terminal := "x-terminal-emulator"
+			if _, err := exec.LookPath(terminal); err != nil {
+				terminal = "gnome-terminal" // 우분투 기본값
 			}
 
-			// 후처리: 포커스 유지
-			myWindow.Canvas().Focus(input)
-			input.SetText("") // 입력창 내용을 ""(빈 칸)으로 변경
+			// 2. 터미널을 띄우고 그 안에서 bash로 스크립트 실행
+			// 터미널 종류에 따라 실행 옵션이 다를 수 있지만, 대부분 -e를 지원합니다.
+			cmd = exec.Command("x-terminal-emulator", "-e", "bash", "-c", fmt.Sprintf("bash %s; exec bash", scriptPath))
+
+		default:
+			dialog.ShowError(fmt.Errorf("지원하지 않는 OS입니다: %s", runtime.GOOS), myWindow)
+			return
 		}
+
+		cmd.Dir = baseDir
+
+		// 실행 및 에러 처리
+		// Linux에서는 Start()를 써야 터미널 창이 떠도 메인 앱이 멈추지 않습니다.
+		var err error
+		if runtime.GOOS == "linux" {
+			err = cmd.Start()
+		} else {
+			err = cmd.Run() // Mac은 기존대로 Run 유지
+		}
+
+		if err != nil {
+			dialog.ShowError(err, myWindow)
+		}
+
+		// 후처리: 포커스 유지 및 입력창 초기화
+		myWindow.Canvas().Focus(input)
+		input.SetText("")
 	}
 
 	// --- 이벤트 바인딩 ---
