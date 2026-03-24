@@ -72,15 +72,17 @@ func main() {
 
 	home, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("홈 디렉토리를 찾을 수 없습니다.")
 		return
 	}
 
-	baseDir := home + "/system"
+	baseDir := filepath.Join(home, "system")
 	var allFiles, listData []string
-	files, _ := filepath.Glob(filepath.Join(baseDir, "*.sh"))
-	for _, f := range files {
-		allFiles = append(allFiles, filepath.Base(f))
+
+	entries, _ := os.ReadDir(baseDir)
+	for _, entry := range entries {
+		if !entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+			allFiles = append(allFiles, entry.Name())
+		}
 	}
 	listData = allFiles
 
@@ -97,7 +99,6 @@ func main() {
 	input := newSmartEntry()
 	input.SetPlaceHolder("Search & Run (Enter)...")
 
-	// --- 핵심 실행 함수 (AppleScript 활용) ---
 	run := func() {
 		if selectedIdx < 0 || selectedIdx >= len(listData) {
 			return
@@ -107,60 +108,43 @@ func main() {
 
 		var cmd *exec.Cmd
 
-		switch runtime.GOOS {
-		case "darwin":
-			// [기존 로직 유지] AppleScript를 이용한 탭 생성 및 테마 설정
-			osa := fmt.Sprintf(`
-                tell application "Terminal"
-                    activate
-                    if (count of windows) is 0 then
-                        do script "%s"
-                    else
-                        tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
-                        delay 0.1
-                        do script "%s" in front window
-                    end if
-                    set custom title of tab (count of tabs of front window) of front window to "%s"
-                end tell`, scriptPath, scriptPath, scriptName)
-			cmd = exec.Command("osascript", "-e", osa)
-
-		case "linux":
-			// 1. 시스템의 기본 터미널 에뮬레이터 찾기
-			terminal := "x-terminal-emulator"
-			if _, err := exec.LookPath(terminal); err != nil {
-				terminal = "gnome-terminal" // 우분투 기본값
+		if filepath.Ext(scriptName) == "" {
+			cmd = exec.Command(scriptPath)
+			cmd.Dir = baseDir
+			if err := cmd.Start(); err != nil {
+				dialog.ShowError(err, myWindow)
 			}
-
-			// 2. 터미널을 띄우고 그 안에서 bash로 스크립트 실행
-			// 터미널 종류에 따라 실행 옵션이 다를 수 있지만, 대부분 -e를 지원합니다.
-			cmd = exec.Command("x-terminal-emulator", "-e", "bash", "-c", fmt.Sprintf("bash %s; exec bash", scriptPath))
-
-		default:
-			dialog.ShowError(fmt.Errorf("지원하지 않는 OS입니다: %s", runtime.GOOS), myWindow)
-			return
-		}
-
-		cmd.Dir = baseDir
-
-		// 실행 및 에러 처리
-		// Linux에서는 Start()를 써야 터미널 창이 떠도 메인 앱이 멈추지 않습니다.
-		var err error
-		if runtime.GOOS == "linux" {
-			err = cmd.Start()
 		} else {
-			err = cmd.Run() // Mac은 기존대로 Run 유지
+			switch runtime.GOOS {
+			case "darwin":
+				osa := fmt.Sprintf(`
+					tell application "Terminal"
+						activate
+						if (count of windows) is 0 then
+							do script "%s"
+						else
+							tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+							delay 0.1
+							do script "%s" in front window
+						end if
+						set custom title of tab (count of tabs of front window) of front window to "%s"
+					end tell`, scriptPath, scriptPath, scriptName)
+				cmd = exec.Command("osascript", "-e", osa)
+			case "linux":
+				cmd = exec.Command("x-terminal-emulator", "-e", "bash", "-c", fmt.Sprintf("bash %s; exec bash", scriptPath))
+			default:
+				return
+			}
+			cmd.Dir = baseDir
+			if err := cmd.Start(); err != nil {
+				dialog.ShowError(err, myWindow)
+			}
 		}
 
-		if err != nil {
-			dialog.ShowError(err, myWindow)
-		}
-
-		// 후처리: 포커스 유지 및 입력창 초기화
 		myWindow.Canvas().Focus(input)
 		input.SetText("")
 	}
 
-	// --- 이벤트 바인딩 ---
 	input.onUp = func() {
 		if selectedIdx > 0 {
 			selectedIdx--
@@ -195,7 +179,6 @@ func main() {
 		}
 	}
 
-	// 초기 설정
 	list.Select(0)
 	myWindow.SetContent(container.NewBorder(input, nil, nil, nil, list))
 	myWindow.Canvas().Focus(input)
