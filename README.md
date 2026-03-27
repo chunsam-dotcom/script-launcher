@@ -35,11 +35,11 @@ While this app is simple to use, building it requires some preparation due to it
 
 - If you don't want it, make a another build PC(VM) and then compile it.
 
-```
+```bash
 make_linux_amd64.sh
 ```
 
-```
+```bash
 make_linux_arm64.sh
 ```
 
